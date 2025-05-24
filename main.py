@@ -1,36 +1,35 @@
-import logging
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
+import os
 import openai
 
-TELEGRAM_TOKEN = '7470735937:AAGIjbeWfSf1-aBPFYU0vffFPtxU7smWJ4M'
-OPENAI_API_KEY = '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'
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+RENDER_EXTERNAL_URL = os.getenv("RENDER_EXTERNAL_URL")
+
 openai.api_key = OPENAI_API_KEY
 
-logging.basicConfig(level=logging.INFO)
-
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Привет! Напиши любое слово, и я придумаю вирусную рифму в стиле 'балерина капучина'!")
+    await update.message.reply_text("Привет! Напиши любое слово, и я сочиню вирусную рифму!")
 
-async def generate_rhyme(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    word = update.message.text.strip()
-
-    prompt = (
-        f"Придумай вирусную, абсурдную и смешную рифму к слову '{word}' в стиле интернет-мема 'балерина капучина'. "
-        f"Ответ только в одну строчку, как короткий слоган."
-    )
-
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    prompt = update.message.text
     response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=50
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "user", "content": f"Придумай вирусную рифму в стиле итальянского брейнрота к слову: {prompt}"}
+        ]
     )
+    result = response.choices[0].message.content
+    await update.message.reply_text(result)
 
-    rhyme = response.choices[0].message.content.strip()
-    await update.message.reply_text(rhyme)
-
-if __name__ == '__main__':
+if name == '__main__':
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, generate_rhyme))
-    app.run_polling()
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    
+    app.run_webhook(
+        listen="0.0.0.0",
+        port=int(os.environ.get("PORT", 10000)),
+        webhook_url=f"{RENDER_EXTERNAL_URL}/"
+    )
