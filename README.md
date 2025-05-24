@@ -1,0 +1,1 @@
+# nominalka_bot
